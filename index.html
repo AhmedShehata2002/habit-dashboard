@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Control Center</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#f2ede6;--bg2:#ede7de;--surface:#faf7f3;--surface2:#f5f0e8;
+  --border:#ddd5c4;--border2:#c9bfac;
+  --wood:#c49a6c;--wood-dim:#a07848;
+  --ink:#2c2416;--ink2:#5a4e3c;--muted:#9c8e7c;--muted2:#b8a990;
+  --p-col:#6b8f71;--t-col:#c4763a;--n-col:#7a9e5e;--s-col:#7878a8;
+  --accent:#c49a6c;--red:#b06060;
+}
+html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% 0%,rgba(196,154,108,0.08) 0%,transparent 60%),radial-gradient(ellipse 60% 60% at 80% 100%,rgba(196,154,108,0.06) 0%,transparent 60%);pointer-events:none;z-index:0;}
+.app{position:relative;height:100%;display:flex;flex-direction:column;z-index:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;}
+.topbar{padding:18px 16px 12px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0;gap:6px;background:var(--surface);}
+.big-clock{text-align:center;grid-column:2;font-family:'Playfair Display',serif;font-size:48px;font-weight:400;line-height:1;color:var(--ink);letter-spacing:-1px;}
+.big-sec{font-size:20px;color:var(--muted);font-weight:400;}
+.left-block{grid-column:1;display:flex;flex-direction:column;gap:4px;}
+.date-line{font-family:'Playfair Display',serif;font-size:15px;color:var(--ink2);}
+.state-badge{display:inline-block;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;padding:3px 8px;border-radius:2px;font-weight:500;transition:all 0.5s;}
+.st0{color:var(--muted);border:1px solid var(--border2);background:transparent;}
+.st1{color:var(--t-col);background:rgba(196,118,58,0.08);border:1px solid rgba(196,118,58,0.3);}
+.st2{color:var(--p-col);background:rgba(107,143,113,0.1);border:1px solid rgba(107,143,113,0.35);}
+.st3{color:var(--wood-dim);background:rgba(196,154,108,0.15);border:1px solid var(--wood);}
+.weather-block{grid-column:3;display:flex;flex-direction:column;align-items:flex-end;gap:1px;}
+.wtemp{font-family:'Playfair Display',serif;font-size:26px;color:var(--ink2);}
+.wdesc{font-size:9px;letter-spacing:0.1em;color:var(--muted);text-transform:uppercase;}
+.wloc{font-size:8px;color:var(--muted2);letter-spacing:0.08em;}
+.quote-bar{margin:10px 14px 0;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--wood);border-radius:2px;}
+.quote-text{font-family:'Playfair Display',serif;font-size:11px;color:var(--ink2);line-height:1.6;font-style:italic;}
+.quote-author{font-size:9px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-top:4px;}
+.milestone{margin:8px 14px 0;padding:10px 14px;background:rgba(196,154,108,0.1);border:1px solid var(--wood);border-radius:2px;display:none;}
+.milestone.show{display:block;}
+.ms-title{font-family:'Playfair Display',serif;font-size:14px;color:var(--wood-dim);margin-bottom:4px;}
+.ms-text{font-size:10px;color:var(--ink2);line-height:1.6;}
+.score-row{padding:10px 16px 6px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.score-main{display:flex;align-items:baseline;gap:3px;}
+.score-n{font-family:'Playfair Display',serif;font-size:52px;line-height:1;color:var(--ink);transition:all 0.2s;}
+.score-n.pop{animation:pop 0.3s ease-out;}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(1)}}
+.score-d{font-family:'Playfair Display',serif;font-size:22px;color:var(--muted);}
+.right-score{display:flex;flex-direction:column;align-items:flex-end;gap:3px;}
+.streak-el{font-size:11px;color:var(--t-col);min-height:14px;font-weight:500;}
+.pct-el{font-size:9px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;}
+.prayer-next{margin:0 14px 6px;padding:9px 14px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--p-col);border-radius:2px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.pn-label{font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.pn-name{font-family:'Playfair Display',serif;font-size:18px;color:var(--p-col);}
+.pn-right{text-align:right;}
+.pn-time{font-family:'Playfair Display',serif;font-size:18px;color:var(--ink2);}
+.pn-cd{font-size:9px;color:var(--muted);letter-spacing:0.08em;margin-top:1px;}
+.prog-wrap{padding:4px 16px 6px;flex-shrink:0;}
+.prog-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:5px;}
+.prog-track{height:3px;background:var(--border);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--wood-dim),var(--wood));border-radius:2px;transition:width 0.5s ease;width:0%;}
+.heatmap-wrap{margin:4px 14px;background:var(--surface);border:1px solid var(--border);border-radius:2px;padding:10px 12px;}
+.hm-title{font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:flex;justify-content:space-between;}
+.hm-grid{display:flex;flex-wrap:wrap;gap:3px;}
+.hm-day{width:14px;height:14px;border-radius:2px;border:1px solid var(--border);}
+.hm-0{background:var(--bg2);}
+.hm-1{background:rgba(196,154,108,0.2);border-color:rgba(196,154,108,0.3);}
+.hm-2{background:rgba(196,154,108,0.4);border-color:rgba(196,154,108,0.5);}
+.hm-3{background:rgba(196,154,108,0.65);border-color:rgba(196,154,108,0.7);}
+.hm-4{background:var(--wood);border-color:var(--wood-dim);}
+.hm-rest{background:rgba(176,96,96,0.2);border-color:rgba(176,96,96,0.35);}
+.hm-today{outline:2px solid var(--ink2);outline-offset:1px;}
+.hm-future{opacity:0.2;}
+.rest-row{margin:4px 14px;display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--surface);border:1px solid var(--border);border-radius:2px;}
+.rest-label{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+.rest-used{font-size:9px;color:var(--muted2);margin-top:1px;}
+.rest-btn{font-family:'DM Sans',sans-serif;font-weight:500;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:6px 14px;border-radius:2px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent;}
+.rest-btn.active{border-color:var(--red);color:var(--red);background:rgba(176,96,96,0.08);}
+.rest-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.cats{flex:1;padding:4px 14px 8px;display:flex;flex-direction:column;gap:6px;}
+.cat{background:var(--surface);border:1px solid var(--border);border-radius:2px;position:relative;overflow:hidden;transition:border-color 0.3s,background 0.3s;}
+.cat::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cc,var(--accent));opacity:0.4;transition:opacity 0.3s;}
+.cat.done{background:var(--surface2);border-color:var(--border2);}
+.cat.done::before{opacity:1;}
+.cat-head{display:flex;align-items:center;padding:9px 14px 7px 16px;gap:8px;}
+.cat-lbl{font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);flex:1;transition:color 0.3s;font-weight:500;}
+.cat.done .cat-lbl{color:var(--ink2);}
+.cat-pts{font-family:'Playfair Display',serif;font-size:18px;color:var(--muted);transition:color 0.3s;}
+.cat.done .cat-pts{color:var(--cc,var(--accent));}
+.pgrid{display:flex;gap:5px;padding:0 14px 10px 16px;}
+.pbtn{flex:1;height:30px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'DM Sans',sans-serif;font-weight:500;font-size:9px;letter-spacing:0.05em;cursor:pointer;transition:all 0.15s;-webkit-tap-highlight-color:transparent;border-radius:2px;}
+.pbtn.on{border-color:var(--p-col);color:var(--p-col);background:rgba(107,143,113,0.1);}
+.pbtn:active{transform:scale(0.93);}
+.hrow{display:flex;align-items:center;padding:0 14px 9px 16px;gap:12px;}
+.pxcheck{width:22px;height:22px;border:1px solid var(--border2);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;border-radius:2px;transition:all 0.15s;-webkit-tap-highlight-color:transparent;font-size:13px;color:transparent;}
+.pxcheck.on{border-color:var(--cc,var(--accent));background:rgba(196,154,108,0.12);color:var(--cc,var(--accent));}
+.pxcheck:active{transform:scale(0.88);}
+.hlbl{flex:1;font-size:11px;color:var(--muted);transition:color 0.3s;}
+.pxcheck.on ~ .hlbl{color:var(--ink2);}
+.nwrap{padding:0 14px 9px 16px;}
+.ninput{width:100%;background:rgba(0,0,0,0.02);border:1px solid var(--border);border-radius:2px;padding:7px 10px;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:11px;resize:none;height:34px;outline:none;transition:border-color 0.2s,color 0.2s;-webkit-appearance:none;}
+.ninput::placeholder{color:var(--border2);}
+.ninput:focus{border-color:var(--border2);color:var(--ink2);}
+.log-sec{padding:4px 14px 24px;flex-shrink:0;}
+.log-btn{width:100%;height:44px;border:1px solid var(--border2);background:var(--surface);color:var(--ink2);font-family:'DM Sans',sans-serif;font-weight:500;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;transition:all 0.2s;-webkit-tap-highlight-color:transparent;border-radius:2px;}
+.log-btn:active{opacity:0.7;}
+.log-btn.logging{background:rgba(196,154,108,0.15);border-color:var(--wood);color:var(--wood-dim);}
+.log-stat{font-size:9px;text-align:center;color:var(--muted);margin-top:5px;letter-spacing:0.1em;text-transform:uppercase;min-height:12px;}
+.toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--ink);padding:9px 18px;font-size:10px;color:var(--bg);letter-spacing:0.1em;text-transform:uppercase;opacity:0;transition:all 0.25s;pointer-events:none;z-index:100;white-space:nowrap;border-radius:2px;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.prayer{--cc:var(--p-col);}
+.training{--cc:var(--t-col);}
+.nutrition{--cc:var(--n-col);}
+.study{--cc:var(--s-col);}
+.training .pxcheck.on{border-color:var(--t-col);background:rgba(196,118,58,0.1);color:var(--t-col);}
+.nutrition .pxcheck.on{border-color:var(--n-col);background:rgba(122,158,94,0.1);color:var(--n-col);}
+.study .pxcheck.on{border-color:var(--s-col);background:rgba(120,120,168,0.1);color:var(--s-col);}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="left-block">
+      <div class="date-line" id="dateLine">---</div>
+      <div class="state-badge st0" id="stateBadge">Offline</div>
+    </div>
+    <div class="big-clock">
+      <span id="clockMain">--:--</span><span class="big-sec" id="clockSec">:--</span>
+    </div>
+    <div class="weather-block">
+      <div class="wtemp" id="wTemp">--&deg;</div>
+      <div class="wdesc" id="wDesc">loading</div>
+      <div class="wloc">Abu Dhabi</div>
+    </div>
+  </div>
+  <div class="quote-bar">
+    <div class="quote-text" id="quoteText"></div>
+    <div class="quote-author" id="quoteAuthor"></div>
+  </div>
+  <div class="milestone" id="milestoneBanner">
+    <div class="ms-title" id="msTitle"></div>
+    <div class="ms-text" id="msText"></div>
+  </div>
+  <div class="score-row">
+    <div class="score-main">
+      <div class="score-n" id="scoreNum">0</div>
+      <div class="score-d">/9</div>
+    </div>
+    <div class="right-score">
+      <div class="streak-el" id="streakEl"></div>
+      <div class="pct-el" id="pctEl">0% complete</div>
+    </div>
+  </div>
+  <div class="prayer-next">
+    <div>
+      <div class="pn-label">Next Prayer</div>
+      <div class="pn-name" id="pnName">---</div>
+    </div>
+    <div class="pn-right">
+      <div class="pn-time" id="pnTime">--:--</div>
+      <div class="pn-cd" id="pnCd">calculating...</div>
+    </div>
+  </div>
+  <div class="prog-wrap">
+    <div class="prog-labels"><span>Daily Output</span><span id="progLbl">0 / 9</span></div>
+    <div class="prog-track"><div class="prog-fill" id="progFill"></div></div>
+  </div>
+  <div class="heatmap-wrap">
+    <div class="hm-title">
+      <span id="hmMonth">This Month</span>
+      <span id="hmBest" style="color:var(--wood-dim);"></span>
+    </div>
+    <div class="hm-grid" id="hmGrid"></div>
+  </div>
+  <div class="rest-row">
+    <div>
+      <div class="rest-label">Rest Day</div>
+      <div class="rest-used" id="restUsed">0 / 1 used this week</div>
+    </div>
+    <button class="rest-btn" id="restBtn" onclick="toggleRest()">Mark Rest</button>
+  </div>
+  <div class="cats">
+    <div class="cat prayer" id="cat-prayer">
+      <div class="cat-head">
+        <div class="cat-lbl">Spiritual</div>
+        <div class="cat-pts" id="pts-prayer">0 / 5</div>
+      </div>
+      <div class="pgrid">
+        <button class="pbtn" data-p="fajr"    onclick="togglePrayer(this)">Fajr</button>
+        <button class="pbtn" data-p="dhuhr"   onclick="togglePrayer(this)">Dhuhr</button>
+        <button class="pbtn" data-p="asr"     onclick="togglePrayer(this)">Asr</button>
+        <button class="pbtn" data-p="maghrib" onclick="togglePrayer(this)">Maghrib</button>
+        <button class="pbtn" data-p="isha"    onclick="togglePrayer(this)">Isha</button>
+      </div>
+    </div>
+    <div class="cat training" id="cat-training">
+      <div class="cat-head">
+        <div class="cat-lbl">Training</div>
+        <div class="cat-pts" id="pts-training">0 / 1</div>
+      </div>
+      <div class="hrow">
+        <button class="pxcheck" id="ck-training" onclick="toggleHabit('training')">&#10003;</button>
+        <span class="hlbl">Trained today</span>
+      </div>
+      <div class="nwrap"><textarea class="ninput" id="n-training" placeholder="What did you train? (optional)"></textarea></div>
+    </div>
+    <div class="cat nutrition" id="cat-nutrition">
+      <div class="cat-head">
+        <div class="cat-lbl">Nutrition</div>
+        <div class="cat-pts" id="pts-nutrition">0 / 1</div>
+      </div>
+      <div class="hrow">
+        <button class="pxcheck" id="ck-nutrition" onclick="toggleHabit('nutrition')">&#10003;</button>
+        <span class="hlbl">Hit calories + protein</span>
+      </div>
+      <div class="nwrap"><textarea class="ninput" id="n-nutrition" placeholder="Anything to note? (optional)"></textarea></div>
+    </div>
+    <div class="cat study" id="cat-study">
+      <div class="cat-head">
+        <div class="cat-lbl">Study</div>
+        <div class="cat-pts" id="pts-study">0 / 1</div>
+      </div>
+      <div class="hrow">
+        <button class="pxcheck" id="ck-study" onclick="toggleHabit('study')">&#10003;</button>
+        <span class="hlbl">At least 1 focused session</span>
+      </div>
+      <div class="nwrap"><textarea class="ninput" id="n-study" placeholder="What did you study? (optional)"></textarea></div>
+    </div>
+  </div>
+  <div class="log-sec">
+    <button class="log-btn" id="logBtn" onclick="doLog()">Log to Calendar</button>
+    <div class="log-stat" id="logStat">Auto-logs at 11:30 PM</div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var QUOTES = [
+  {t:"The most beloved deeds to Allah are those done consistently, even if they are small.",a:"Prophet Muhammad"},
+  {t:"Whoever is not grateful for small things will not be grateful for large things.",a:"Prophet Muhammad"},
+  {t:"Take benefit of five before five: your youth, your health, your wealth, your free time, and your life.",a:"Prophet Muhammad"},
+  {t:"Verily, with every hardship comes ease.",a:"Quran 94:5"},
+  {t:"Do not lose hope, nor be sad.",a:"Quran 3:139"},
+  {t:"Indeed, Allah will not change the condition of a people until they change what is in themselves.",a:"Quran 13:11"},
+  {t:"The heart will not find complete happiness except through loving Allah and remembering Him.",a:"Ibn Taymiyyah"},
+  {t:"The body grows stronger when you are consistent with it. The soul grows stronger when you are consistent with prayer.",a:"Ibn al-Qayyim"},
+  {t:"Yesterday I was clever, so I wanted to change the world. Today I am wise, so I am changing myself.",a:"Rumi"},
+  {t:"The wound is the place where the light enters you.",a:"Rumi"},
+  {t:"We suffer more in imagination than in reality.",a:"Seneca"},
+  {t:"It is not that we have a short time to live, but that we waste a lot of it.",a:"Seneca"},
+  {t:"Waste no more time arguing about what a good man should be. Be one.",a:"Marcus Aurelius"},
+  {t:"You have power over your mind, not outside events. Realize this, and you will find strength.",a:"Marcus Aurelius"},
+  {t:"First say to yourself what you would be; then do what you have to do.",a:"Epictetus"},
+  {t:"We are what we repeatedly do. Excellence is not an act, but a habit.",a:"Aristotle"},
+  {t:"Discipline is the bridge between goals and accomplishment.",a:"Jim Rohn"},
+  {t:"Hard choices, easy life. Easy choices, hard life.",a:"Jerzy Gregorek"},
+  {t:"Don't count the days. Make the days count.",a:"Muhammad Ali"},
+  {t:"Out of suffering have emerged the strongest souls.",a:"Kahlil Gibran"},
+  {t:"Be in this world as if you were a stranger or a traveler along a path.",a:"Ibn Umar"},
+  {t:"Work in silence. Let your results be your noise.",a:"Frank Ocean"},
+  {t:"Small disciplines repeated daily lead to great achievements over time.",a:"John Maxwell"},
+];
+
+var MILESTONES = {
+  3:  {title:"Day 3 — The Loop Is Forming",    text:"Your brain is now associating these habits with reward. The first dopamine loop is closing. This is where most people quit. You didn't."},
+  7:  {title:"Day 7 — First Week Complete",     text:"Research shows the first week is the highest dropout point. You just cleared the hardest gate."},
+  21: {title:"Day 21 — Automation Begins",      text:"Simple habits start feeling automatic around now. Your brain is spending less energy to initiate them."},
+  66: {title:"Day 66 — Wired In",               text:"UCL research: 66 days is the average point where behaviour becomes truly automatic. You are the habit now."},
+  90: {title:"Day 90 — Identity Shift",         text:"Three months of consistent action. Neuroscience confirms this is identity-level change. This is who you are now."},
+};
+
+var STATE_CLS = ["st0","st1","st2","st3"];
+var STATE_LBL = ["Offline","Active","Locked In","Perfect Day"];
+
+var TODAY = new Date().toISOString().slice(0,10);
+var lastTotal = -1;
+
+var state = {
+  prayers: {fajr:false,dhuhr:false,asr:false,maghrib:false,isha:false},
+  training:false, nutrition:false, study:false, isRest:false,
+  streak: parseInt(localStorage.getItem("streak")||"0"),
+  lastLog: localStorage.getItem("lastLog")||""
+};
+
+function saveState() {
+  localStorage.setItem("d_"+TODAY, JSON.stringify({
+    prayers:state.prayers, training:state.training,
+    nutrition:state.nutrition, study:state.study, isRest:state.isRest
+  }));
+}
+
+function getScore() {
+  var p=0, keys=["fajr","dhuhr","asr","maghrib","isha"];
+  for(var i=0;i<keys.length;i++) if(state.prayers[keys[i]]) p++;
+  return {total:p+(state.training?1:0)+(state.nutrition?1:0)+(state.study?1:0), p:p};
+}
+
+function getTodayKey() { return new Date().toISOString().slice(0,10); }
+function getWeekKey() {
+  var d=new Date(), day=d.getDay(), nd=new Date(d);
+  nd.setDate(d.getDate()-day+(day===0?-6:1));
+  return nd.toISOString().slice(0,10);
+}
+function isSat() { return new Date().getDay()===6; }
+
+function playTone(freq,type,dur,vol) {
+  try {
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!window._ac) window._ac=new AC();
+    var ac=window._ac;
+    if(ac.state==="suspended") ac.resume();
+    var o=ac.createOscillator(), g=ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type=type||"sine"; o.frequency.setValueAtTime(freq,ac.currentTime);
+    g.gain.setValueAtTime(vol||0.12,ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+dur);
+    o.start(); o.stop(ac.currentTime+dur);
+  } catch(e){}
+}
+function soundCheck(cat) {
+  var f={prayer:740,training:587,nutrition:494,study:659}[cat]||660;
+  playTone(f,"sine",0.15,0.12);
+  setTimeout(function(){playTone(f*1.2,"sine",0.1,0.08);},90);
+}
+function soundUncheck(){playTone(330,"sine",0.08,0.07);}
+function soundLevelUp(s){
+  var n=[330,415,494,587,740];
+  for(var i=0;i<Math.min(s,5);i++){(function(j){setTimeout(function(){playTone(n[j],"triangle",0.18,0.1);},j*60);})(i);}
+}
+function soundPerfect(){
+  var n=[523,659,784,988,1047];
+  for(var i=0;i<n.length;i++){(function(j){setTimeout(function(){playTone(n[j],"sine",0.35,0.11);},j*90);})(i);}
+}
+function playMilestone(){
+  var n=[440,523,659,784];
+  for(var i=0;i<n.length;i++){(function(j){setTimeout(function(){playTone(n[j],"sine",0.4,0.11);},j*110);})(i);}
+}
+
+function getPrayerTimes() {
+  var now=new Date(),Y=now.getFullYear(),M=now.getMonth()+1,D=now.getDate();
+  var N=Math.floor(275*M/9)-Math.floor((M+9)/12)*(1+Math.floor((Y-4*Math.floor(Y/4)+2)/3))+D-30;
+  var L=280.46+0.9856474*N, G=(357.528+0.9856003*N)*Math.PI/180;
+  var lam=(L+1.915*Math.sin(G)+0.02*Math.sin(2*G))*Math.PI/180;
+  var eps=23.439*Math.PI/180;
+  var RA=Math.atan2(Math.cos(eps)*Math.sin(lam),Math.cos(lam))*180/Math.PI/15;
+  var ET=(L/15-((RA+24)%24))*60;
+  var lat=24.45*Math.PI/180, dec=Math.asin(Math.sin(eps)*Math.sin(lam));
+  var noon=12-ET/60-54.38/15+4;
+  function aT(a){var c=(-Math.sin(a*Math.PI/180)-Math.sin(lat)*Math.sin(dec))/(Math.cos(lat)*Math.cos(dec));if(Math.abs(c)>1)return null;return Math.acos(c)*180/Math.PI/15;}
+  return[
+    {name:"Fajr",    time:noon-(aT(-18)||1.4)},
+    {name:"Dhuhr",   time:noon+0.05},
+    {name:"Asr",     time:noon+Math.atan(1+Math.tan(Math.abs(lat-dec)))*180/Math.PI/15},
+    {name:"Maghrib", time:noon+(aT(-0.833)||1.1)+0.05},
+    {name:"Isha",    time:noon+(aT(-17)||1.3)},
+  ];
+}
+function fmtHM(h){var hh=Math.floor(((h%24)+24)%24),mm=Math.round((h%1)*60);if(mm===60){mm=0;hh=(hh+1)%24;}return String(hh).padStart(2,"0")+":"+String(mm).padStart(2,"0");}
+
+function updatePrayer() {
+  var times=getPrayerTimes(),now=new Date();
+  var nowH=now.getHours()+now.getMinutes()/60+now.getSeconds()/3600;
+  var next=null;
+  for(var i=0;i<times.length;i++){if(times[i].time>nowH){next=times[i];break;}}
+  if(!next) next=times[0];
+  var diff=next.time-nowH; if(diff<0)diff+=24;
+  var hrs=Math.floor(diff),mins=Math.floor((diff-hrs)*60);
+  document.getElementById("pnName").textContent=next.name;
+  document.getElementById("pnTime").textContent=fmtHM(next.time);
+  document.getElementById("pnCd").textContent=hrs>0?"in "+hrs+"h "+mins+"m":"in "+mins+"m";
+}
+
+function fetchWeather() {
+  fetch("https://api.open-meteo.com/v1/forecast?latitude=24.45&longitude=54.38&current=temperature_2m,weathercode&timezone=Asia%2FDubai")
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var t=Math.round(d.current.temperature_2m),c=d.current.weathercode;
+      var desc=c===0?"Clear":c<=2?"Partly Cloudy":c<=3?"Overcast":c<=49?"Foggy":c<=69?"Rain":"Cloudy";
+      document.getElementById("wTemp").textContent=t+"\u00b0";
+      document.getElementById("wDesc").textContent=desc;
+    })
+    .catch(function(){document.getElementById("wDesc").textContent="--";});
+}
+
+function buildHeatmap() {
+  var now=new Date(),y=now.getFullYear(),m=now.getMonth();
+  var days=new Date(y,m+1,0).getDate();
+  var months=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  document.getElementById("hmMonth").textContent=months[m];
+  var grid=document.getElementById("hmGrid"); grid.innerHTML="";
+  var best=0,cur=0;
+  for(var d=1;d<=days;d++){
+    var key=y+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+    var el=document.createElement("div"); el.className="hm-day";
+    var isFuture=key>TODAY, isToday=key===TODAY;
+    if(isFuture){el.classList.add("hm-future");}
+    else{
+      var isRest=localStorage.getItem("rest_"+key);
+      var dd=localStorage.getItem("d_"+key);
+      if(isRest){el.classList.add("hm-rest");cur=0;}
+      else if(dd){
+        var pd=JSON.parse(dd),pCount=0;
+        var pkeys=["fajr","dhuhr","asr","maghrib","isha"];
+        for(var pi=0;pi<pkeys.length;pi++) if(pd.prayers&&pd.prayers[pkeys[pi]]) pCount++;
+        var total=pCount+(pd.training?1:0)+(pd.nutrition?1:0)+(pd.study?1:0);
+        var lvl=total>=9?4:total>=7?3:total>=4?2:total>0?1:0;
+        el.classList.add("hm-"+lvl);
+        if(lvl>=2){cur++;if(cur>best)best=cur;}else cur=0;
+      }else{el.classList.add("hm-0");cur=0;}
+    }
+    if(isToday)el.classList.add("hm-today");
+    grid.appendChild(el);
+  }
+  document.getElementById("hmBest").textContent=best>=2?"Best: "+best+" days":"";
+}
+
+function getRestUsed(){return parseInt(localStorage.getItem("restWeek_"+getWeekKey())||"0");}
+function toggleRest(){
+  if(isSat()){showToast("Saturday is always rest");return;}
+  var used=getRestUsed();
+  if(!state.isRest&&used>=1){showToast("Rest day already used this week");return;}
+  state.isRest=!state.isRest;
+  if(state.isRest){localStorage.setItem("restWeek_"+getWeekKey(),used+1);localStorage.setItem("rest_"+TODAY,"1");}
+  else{localStorage.setItem("restWeek_"+getWeekKey(),Math.max(0,used-1));localStorage.removeItem("rest_"+TODAY);}
+  updateRestUI();saveState();buildHeatmap();
+}
+function updateRestUI(){
+  var sat=isSat(),used=getRestUsed(),btn=document.getElementById("restBtn");
+  if(sat){btn.textContent="Saturday — Rest";btn.classList.add("active");btn.disabled=true;document.getElementById("restUsed").textContent="Automatic rest day";}
+  else{btn.classList.toggle("active",state.isRest);btn.textContent=state.isRest?"Rest Active":"Mark Rest";btn.disabled=!state.isRest&&used>=1;document.getElementById("restUsed").textContent=used+" / 1 used this week";}
+}
+
+function checkMilestone(streak){
+  var m=MILESTONES[streak],banner=document.getElementById("milestoneBanner");
+  if(m){document.getElementById("msTitle").textContent=m.title;document.getElementById("msText").textContent=m.text;banner.classList.add("show");playMilestone();}
+  else banner.classList.remove("show");
+}
+
+function stateIdx(t){return t===9?3:t>=7?2:t>=4?1:0;}
+
+function updateUI(){
+  var sc=getScore(),total=sc.total,p=sc.p;
+  var sEl=document.getElementById("scoreNum");
+  if(total!==lastTotal&&lastTotal>=0){
+    sEl.classList.remove("pop");void sEl.offsetWidth;sEl.classList.add("pop");
+    if(total===9)soundPerfect();else if(total>lastTotal)soundLevelUp(total);
+  }
+  lastTotal=total;
+  sEl.textContent=total;
+  document.getElementById("progFill").style.width=(total/9*100)+"%";
+  document.getElementById("pctEl").textContent=Math.round(total/9*100)+"% complete";
+  document.getElementById("progLbl").textContent=total+" / 9";
+  document.getElementById("pts-prayer").textContent=p+" / 5";
+  document.getElementById("pts-training").textContent=(state.training?1:0)+" / 1";
+  document.getElementById("pts-nutrition").textContent=(state.nutrition?1:0)+" / 1";
+  document.getElementById("pts-study").textContent=(state.study?1:0)+" / 1";
+  document.getElementById("cat-prayer").classList.toggle("done",p===5);
+  document.getElementById("cat-training").classList.toggle("done",state.training);
+  document.getElementById("cat-nutrition").classList.toggle("done",state.nutrition);
+  document.getElementById("cat-study").classList.toggle("done",state.study);
+  var si=stateIdx(total),sb=document.getElementById("stateBadge");
+  sb.className="state-badge "+STATE_CLS[si]; sb.textContent=STATE_LBL[si];
+  var se=document.getElementById("streakEl");
+  se.textContent=state.streak>=3&&total>=7?"🔥 "+state.streak+" day streak":state.streak>0?state.streak+" day streak":"";
+  checkMilestone(state.streak);
+  updateRestUI();
+  saveState();
+}
+
+function togglePrayer(btn){
+  var k=btn.dataset.p; state.prayers[k]=!state.prayers[k];
+  btn.classList.toggle("on",state.prayers[k]);
+  if(state.prayers[k])soundCheck("prayer");else soundUncheck();
+  updateUI();buildHeatmap();
+}
+function toggleHabit(h){
+  state[h]=!state[h];
+  document.getElementById("ck-"+h).classList.toggle("on",state[h]);
+  if(state[h])soundCheck(h);else soundUncheck();
+  updateUI();buildHeatmap();
+}
+
+function doLog(){
+  var sc=getScore(),total=sc.total,p=sc.p;
+  var btn=document.getElementById("logBtn"),stat=document.getElementById("logStat");
+  btn.classList.add("logging");btn.textContent="Logging...";
+  var done=[],pkeys=["fajr","dhuhr","asr","maghrib","isha"];
+  for(var i=0;i<pkeys.length;i++) if(state.prayers[pkeys[i]]) done.push(pkeys[i]);
+  var flare=(state.streak>=3&&total>=7)?" 🔥":"";
+  var restTag=(state.isRest||isSat())?" 🛌":"";
+  var title="Daily Score: "+total+"/9"+flare+restTag;
+  var lines=["Prayer "+p+"/5 ("+(done.join(", ")||"none")+")",
+    "Training: "+(state.training?"Done":"—"),
+    "Nutrition: "+(state.nutrition?"Done":"—"),
+    "Study: "+(state.study?"Done":"—")];
+  var nT=document.getElementById("n-training").value.trim();
+  var nN=document.getElementById("n-nutrition").value.trim();
+  var nS=document.getElementById("n-study").value.trim();
+  if(nT)lines.push("Training: "+nT);
+  if(nN)lines.push("Nutrition: "+nN);
+  if(nS)lines.push("Study: "+nS);
+  if(state.streak>0)lines.push("Streak: "+state.streak+" days");
+  var n=new Date(),y=n.getFullYear(),m=String(n.getMonth()+1).padStart(2,"0"),d=String(n.getDate()).padStart(2,"0");
+  var url="https://calendar.google.com/calendar/render?action=TEMPLATE"+
+    "&text="+encodeURIComponent(title)+
+    "&dates="+y+m+d+"T233000/"+y+m+d+"T234500"+
+    "&details="+encodeURIComponent(lines.join("\n"));
+  var yest=new Date();yest.setDate(yest.getDate()-1);
+  var yKey=yest.toISOString().slice(0,10);
+  var yRest=localStorage.getItem("rest_"+yKey),yIsSat=new Date(yKey).getDay()===6;
+  var yD=localStorage.getItem("d_"+yKey),yOk=yRest||yIsSat;
+  if(!yOk&&yD){var yd=JSON.parse(yD),yp=0;var ypkeys=["fajr","dhuhr","asr","maghrib","isha"];for(var j=0;j<ypkeys.length;j++) if(yd.prayers&&yd.prayers[ypkeys[j]])yp++;yOk=(yp+(yd.training?1:0)+(yd.nutrition?1:0)+(yd.study?1:0))>=7;}
+  if(state.lastLog===yKey&&yOk)state.streak++;else if(state.lastLog!==TODAY)state.streak=1;
+  state.lastLog=TODAY;localStorage.setItem("streak",state.streak);localStorage.setItem("lastLog",TODAY);
+  setTimeout(function(){
+    window.open(url,"_blank");
+    btn.classList.remove("logging");btn.textContent="Logged";
+    stat.textContent="Saved to Google Calendar";
+    showToast("Score "+total+"/9 logged");
+    updateUI();buildHeatmap();
+    setTimeout(function(){btn.textContent="Log to Calendar";stat.textContent="Auto-logs at 11:30 PM";},4000);
+  },700);
+}
+
+setInterval(function(){
+  var n=new Date();
+  if(n.getHours()===23&&n.getMinutes()===30&&!localStorage.getItem("al_"+TODAY)){
+    localStorage.setItem("al_"+TODAY,"1");doLog();
+  }
+},30000);
+
+function updateClock(){
+  var n=new Date();
+  var M=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var D=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  document.getElementById("dateLine").textContent=D[n.getDay()]+", "+n.getDate()+" "+M[n.getMonth()];
+  document.getElementById("clockMain").textContent=String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0");
+  document.getElementById("clockSec").textContent=":"+String(n.getSeconds()).padStart(2,"0");
+  updatePrayer();
+}
+
+function showToast(msg){
+  var t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
+  setTimeout(function(){t.classList.remove("show");},2600);
+}
+
+function setQuote(){
+  var d=new Date(),start=new Date(d.getFullYear(),0,1);
+  var day=Math.floor((d-start)/(1000*60*60*24));
+  var idx=(d.getFullYear()*366+day)%QUOTES.length;
+  var q=QUOTES[idx];
+  document.getElementById("quoteText").textContent="\u201c"+q.t+"\u201d";
+  document.getElementById("quoteAuthor").textContent="\u2014 "+q.a;
+}
+
+// INIT
+setQuote();
+fetchWeather();
+setInterval(fetchWeather,600000);
+
+var saved=localStorage.getItem("d_"+TODAY);
+if(saved){
+  var sd=JSON.parse(saved);
+  if(sd.prayers)state.prayers=sd.prayers;
+  state.training=!!sd.training;
+  state.nutrition=!!sd.nutrition;
+  state.study=!!sd.study;
+  state.isRest=!!sd.isRest;
+  var pn=["fajr","dhuhr","asr","maghrib","isha"];
+  for(var i=0;i<pn.length;i++){var pb=document.querySelector("[data-p='"+pn[i]+"']");if(pb)pb.classList.toggle("on",!!state.prayers[pn[i]]);}
+  var hn=["training","nutrition","study"];
+  for(var j=0;j<hn.length;j++){var cb=document.getElementById("ck-"+hn[j]);if(cb)cb.classList.toggle("on",!!state[hn[j]]);}
+  lastTotal=getScore().total;
+}
+
+buildHeatmap();
+updateUI();
+updateClock();
+setInterval(updateClock,1000);
+</script>
+</body>
+</html>
