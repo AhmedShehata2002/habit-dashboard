@@ -14,7 +14,7 @@
   --border:#ddd5c4;--border2:#c9bfac;
   --wood:#c49a6c;--wood-dim:#a07848;
   --ink:#2c2416;--ink2:#5a4e3c;--muted:#9c8e7c;--muted2:#b8a990;
-  --p-col:#6b8f71;--t-col:#c4763a;--n-col:#7a9e5e;--s-col:#7878a8;
+  --p-col:#6b8f71;--t-col:#c4763a;--n-col:#7a9e5e;--s-col:#7878a8;--q-col:#8a6a4a;
   --accent:#c49a6c;--red:#b06060;
 }
 html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased;}
@@ -113,9 +113,11 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .training{--cc:var(--t-col);}
 .nutrition{--cc:var(--n-col);}
 .study{--cc:var(--s-col);}
+.quran{--cc:var(--q-col);}
 .training .pxcheck.on{border-color:var(--t-col);background:rgba(196,118,58,0.1);color:var(--t-col);}
 .nutrition .pxcheck.on{border-color:var(--n-col);background:rgba(122,158,94,0.1);color:var(--n-col);}
 .study .pxcheck.on{border-color:var(--s-col);background:rgba(120,120,168,0.1);color:var(--s-col);}
+.quran .pxcheck.on{border-color:var(--q-col);background:rgba(138,106,74,0.1);color:var(--q-col);}
 </style>
 </head>
 <body>
@@ -227,6 +229,17 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
       </div>
       <div class="nwrap"><textarea class="ninput" id="n-study" placeholder="What did you study? (optional)"></textarea></div>
     </div>
+    <div class="cat quran" id="cat-quran">
+      <div class="cat-head">
+        <div class="cat-lbl">Quran</div>
+        <div class="cat-pts" id="pts-quran">0 / 1</div>
+      </div>
+      <div class="hrow">
+        <button class="pxcheck" id="ck-quran" onclick="toggleHabit('quran')">&#10003;</button>
+        <span class="hlbl">Read at least 1 page</span>
+      </div>
+      <div class="nwrap"><textarea class="ninput" id="n-quran" placeholder="What did you read? (optional)"></textarea></div>
+    </div>
   </div>
   <div class="log-sec">
     <button class="log-btn" id="logBtn" onclick="doLog()">Log to Calendar</button>
@@ -277,7 +290,7 @@ var lastTotal = -1;
 
 var state = {
   prayers: {fajr:false,dhuhr:false,asr:false,maghrib:false,isha:false},
-  training:false, nutrition:false, study:false, isRest:false,
+  training:false, nutrition:false, study:false, quran:false, isRest:false,
   streak: parseInt(localStorage.getItem("streak")||"0"),
   lastLog: localStorage.getItem("lastLog")||""
 };
@@ -285,14 +298,14 @@ var state = {
 function saveState() {
   localStorage.setItem("d_"+TODAY, JSON.stringify({
     prayers:state.prayers, training:state.training,
-    nutrition:state.nutrition, study:state.study, isRest:state.isRest
+    nutrition:state.nutrition, study:state.study, quran:state.quran, isRest:state.isRest
   }));
 }
 
 function getScore() {
   var p=0, keys=["fajr","dhuhr","asr","maghrib","isha"];
   for(var i=0;i<keys.length;i++) if(state.prayers[keys[i]]) p++;
-  return {total:p+(state.training?1:0)+(state.nutrition?1:0)+(state.study?1:0), p:p};
+  return {total:p+(state.training?1:0)+(state.nutrition?1:0)+(state.study?1:0)+(state.quran?1:0), p:p};
 }
 
 function getTodayKey() { return new Date().toISOString().slice(0,10); }
@@ -402,7 +415,7 @@ function buildHeatmap() {
         var pd=JSON.parse(dd),pCount=0;
         var pkeys=["fajr","dhuhr","asr","maghrib","isha"];
         for(var pi=0;pi<pkeys.length;pi++) if(pd.prayers&&pd.prayers[pkeys[pi]]) pCount++;
-        var total=pCount+(pd.training?1:0)+(pd.nutrition?1:0)+(pd.study?1:0);
+        var total=pCount+(pd.training?1:0)+(pd.nutrition?1:0)+(pd.study?1:0)+(pd.quran?1:0);
         var lvl=total>=9?4:total>=7?3:total>=4?2:total>0?1:0;
         el.classList.add("hm-"+lvl);
         if(lvl>=2){cur++;if(cur>best)best=cur;}else cur=0;
@@ -436,7 +449,7 @@ function checkMilestone(streak){
   else banner.classList.remove("show");
 }
 
-function stateIdx(t){return t===9?3:t>=7?2:t>=4?1:0;}
+function stateIdx(t){return t===9?3:t>=8?2:t>=5?1:0;}
 
 function updateUI(){
   var sc=getScore(),total=sc.total,p=sc.p;
@@ -454,14 +467,16 @@ function updateUI(){
   document.getElementById("pts-training").textContent=(state.training?1:0)+" / 1";
   document.getElementById("pts-nutrition").textContent=(state.nutrition?1:0)+" / 1";
   document.getElementById("pts-study").textContent=(state.study?1:0)+" / 1";
+  document.getElementById("pts-quran").textContent=(state.quran?1:0)+" / 1";
   document.getElementById("cat-prayer").classList.toggle("done",p===5);
   document.getElementById("cat-training").classList.toggle("done",state.training);
   document.getElementById("cat-nutrition").classList.toggle("done",state.nutrition);
   document.getElementById("cat-study").classList.toggle("done",state.study);
+  document.getElementById("cat-quran").classList.toggle("done",state.quran);
   var si=stateIdx(total),sb=document.getElementById("stateBadge");
   sb.className="state-badge "+STATE_CLS[si]; sb.textContent=STATE_LBL[si];
   var se=document.getElementById("streakEl");
-  se.textContent=state.streak>=3&&total>=7?"🔥 "+state.streak+" day streak":state.streak>0?state.streak+" day streak":"";
+  se.textContent=state.streak>=3&&total>=8?"🔥 "+state.streak+" day streak":state.streak>0?state.streak+" day streak":"";
   checkMilestone(state.streak);
   updateRestUI();
   saveState();
@@ -486,19 +501,22 @@ function doLog(){
   btn.classList.add("logging");btn.textContent="Logging...";
   var done=[],pkeys=["fajr","dhuhr","asr","maghrib","isha"];
   for(var i=0;i<pkeys.length;i++) if(state.prayers[pkeys[i]]) done.push(pkeys[i]);
-  var flare=(state.streak>=3&&total>=7)?" 🔥":"";
+  var flare=(state.streak>=3&&total>=8)?" 🔥":"";
   var restTag=(state.isRest||isSat())?" 🛌":"";
   var title="Daily Score: "+total+"/9"+flare+restTag;
   var lines=["Prayer "+p+"/5 ("+(done.join(", ")||"none")+")",
     "Training: "+(state.training?"Done":"—"),
     "Nutrition: "+(state.nutrition?"Done":"—"),
-    "Study: "+(state.study?"Done":"—")];
+    "Study: "+(state.study?"Done":"—"),
+    "Quran: "+(state.quran?"Done":"—")];
   var nT=document.getElementById("n-training").value.trim();
   var nN=document.getElementById("n-nutrition").value.trim();
   var nS=document.getElementById("n-study").value.trim();
+  var nQ=document.getElementById("n-quran").value.trim();
   if(nT)lines.push("Training: "+nT);
   if(nN)lines.push("Nutrition: "+nN);
   if(nS)lines.push("Study: "+nS);
+  if(nQ)lines.push("Quran: "+nQ);
   if(state.streak>0)lines.push("Streak: "+state.streak+" days");
   var n=new Date(),y=n.getFullYear(),m=String(n.getMonth()+1).padStart(2,"0"),d=String(n.getDate()).padStart(2,"0");
   var url="https://calendar.google.com/calendar/render?action=TEMPLATE"+
@@ -509,7 +527,7 @@ function doLog(){
   var yKey=yest.toISOString().slice(0,10);
   var yRest=localStorage.getItem("rest_"+yKey),yIsSat=new Date(yKey).getDay()===6;
   var yD=localStorage.getItem("d_"+yKey),yOk=yRest||yIsSat;
-  if(!yOk&&yD){var yd=JSON.parse(yD),yp=0;var ypkeys=["fajr","dhuhr","asr","maghrib","isha"];for(var j=0;j<ypkeys.length;j++) if(yd.prayers&&yd.prayers[ypkeys[j]])yp++;yOk=(yp+(yd.training?1:0)+(yd.nutrition?1:0)+(yd.study?1:0))>=7;}
+  if(!yOk&&yD){var yd=JSON.parse(yD),yp=0;var ypkeys=["fajr","dhuhr","asr","maghrib","isha"];for(var j=0;j<ypkeys.length;j++) if(yd.prayers&&yd.prayers[ypkeys[j]])yp++;yOk=(yp+(yd.training?1:0)+(yd.nutrition?1:0)+(yd.study?1:0)+(yd.quran?1:0))>=8;}
   if(state.lastLog===yKey&&yOk)state.streak++;else if(state.lastLog!==TODAY)state.streak=1;
   state.lastLog=TODAY;localStorage.setItem("streak",state.streak);localStorage.setItem("lastLog",TODAY);
   setTimeout(function(){
@@ -565,10 +583,11 @@ if(saved){
   state.training=!!sd.training;
   state.nutrition=!!sd.nutrition;
   state.study=!!sd.study;
+  state.quran=!!sd.quran;
   state.isRest=!!sd.isRest;
   var pn=["fajr","dhuhr","asr","maghrib","isha"];
   for(var i=0;i<pn.length;i++){var pb=document.querySelector("[data-p='"+pn[i]+"']");if(pb)pb.classList.toggle("on",!!state.prayers[pn[i]]);}
-  var hn=["training","nutrition","study"];
+  var hn=["training","nutrition","study","quran"];
   for(var j=0;j<hn.length;j++){var cb=document.getElementById("ck-"+hn[j]);if(cb)cb.classList.toggle("on",!!state[hn[j]]);}
   lastTotal=getScore().total;
 }
