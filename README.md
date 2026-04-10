@@ -74,5 +74,3 @@ The app is a single `index.html` file with no frameworks or dependencies:
 Building this taught me a lot about the Web Audio API, PWA manifest configuration, and how to persist state cleanly across sessions without a backend. The prayer time calculation engine — computing solar angles from coordinates — was the most technically interesting part.
 
 ---
-
-## How It Works
