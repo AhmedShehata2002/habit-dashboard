@@ -2,8 +2,7 @@
 
 An always-on personal productivity dashboard deployed via GitHub Pages as a Progressive Web App (PWA). Built to live permanently on an iPhone mounted to an IKEA SKÅDIS pegboard as a home control centre.
 
-**[🔗 Live Demo](https://ahmedshehata2002.github.io/habit-dashboard)**
-
+![Dashboard Demo](demo.gif)
 ---
 
 ## Why I Built This
